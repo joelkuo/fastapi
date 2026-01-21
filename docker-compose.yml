@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  api: #naming syntax: folder name (in this case, api) - service name (in this case, api), for example: fastapi_api
+    build: . #build the image from the Dockerfile in the current directory
+    depends_on:
+      - postgres #make sure the postgres service is started before the api service is started
+    ports: #<port on local host>:<port on container>. The local host port is the port we want to access from our local machine.
+      - 8000:8000
+    volumes:
+      - ./:/user/src/app:ro #./ means sync the entire current directory to the container, and ro means read only so we cannot change the files in the container
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"] #override the CMD in the Dockerfile
+    env_file:
+      - ./.env #this is same as above, choose either one.
+    environment:
+      - DATABASE_HOSTNAME=postgres #docker network uses DNS, so we don't have to use IP address, but the service name and it will refer to the postgres service in the docker network
+      - DATABASE_PASSWORD=gzh960827
+      - DATABASE_USERNAME=postgres
+      - DATABASE_NAME=fastapi
+      - DATABASE_PORT=5432
+      - SECRET_KEY=09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=gzh960827
+      - POSTGRES_DB=fastapi
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:

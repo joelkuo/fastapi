@@ -1,0 +1,22 @@
+name: Build and Deploy Code
+
+on: [push, pull_request] #happens on all push and pulls
+
+# on:
+    # push:
+        # branches: ["main", "xxx"]
+        #Or equivalently
+        # branches:
+            # - "main"
+            #- "other branch"
+    # pull_request: 
+
+jobs: 
+    job1:
+        runs-on: ubuntu-latest
+        steps:
+            - name: pulling git repo
+              uses: actions/checkout@v6
+            - name: say hi to Zhihao
+              run: echo "hello Zhihao"
+

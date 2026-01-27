@@ -18,7 +18,8 @@ jobs:
         environment: 
             name: testing
         env:
-            DATABASE_HOSTNAME: ${{secrets.DATABASE_HOSTNAME}}
+            # DATABASE_HOSTNAME: ${{secrets.DATABASE_HOSTNAME}}
+            DATABASE_HOSTNAME: 127.0.0.1
             DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
             DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
             DATABASE_NAME: ${{secrets.DATABASE_NAME}}

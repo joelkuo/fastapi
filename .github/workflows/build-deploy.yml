@@ -32,7 +32,7 @@ jobs:
                 image: postgres:latest
                 env:
                     POSTGRES_PASSWORD: gzh960827
-                    POSTGRES_DB: fastapi_test
+                    POSTGRES_DB: fastapi
                     POSTGRES_USER: postgres           
                 ports: 
                     - 5432:5432
@@ -55,6 +55,10 @@ jobs:
               run: python -m pip install --upgrade pip
             - name: install all dependencies
               run: pip install -r requirements.txt
+            - name: create test database
+              run: |
+                PGPASSWORD=gzh960827 psql -h 127.0.0.1 -U postgres -d fastapi -c "CREATE DATABASE fastapi_test;"
+              continue-on-error: true
             - name: test with pytest
               run: |
                 pip install pytest

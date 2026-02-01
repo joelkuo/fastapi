@@ -15,25 +15,24 @@ on: [push, pull_request] #happens on all push and pulls
 
 jobs: 
     job1: 
-        environment: 
+        environment:
             name: testing
         env:
-            # Hardcoded for debugging - TODO: move back to secrets after confirming it works
-            DATABASE_HOSTNAME: 127.0.0.1
-            DATABASE_PASSWORD: gzh960827
-            DATABASE_USERNAME: postgres
-            DATABASE_NAME: fastapi
-            DATABASE_PORT: 5432
-            SECRET_KEY: 09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7
-            ALGORITHM: HS256
-            ACCESS_TOKEN_EXPIRE_MINUTES: 60
+            DATABASE_HOSTNAME: ${{ secrets.DATABASE_HOSTNAME }}
+            DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+            DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+            DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+            DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+            SECRET_KEY: ${{ secrets.SECRET_KEY }}
+            ALGORITHM: ${{ secrets.ALGORITHM }}
+            ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
         services:
             postgres:
                 image: postgres:latest
                 env:
-                    POSTGRES_PASSWORD: gzh960827
-                    POSTGRES_DB: fastapi
-                    POSTGRES_USER: postgres           
+                    POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+                    POSTGRES_DB: ${{ secrets.DATABASE_NAME }}
+                    POSTGRES_USER: ${{ secrets.DATABASE_USERNAME }}           
                 ports: 
                     - 5432:5432
                 options: >-                                                                                                                                 
@@ -57,12 +56,31 @@ jobs:
               run: pip install -r requirements.txt
             - name: create test database
               run: |
-                PGPASSWORD=gzh960827 psql -h 127.0.0.1 -U postgres -d fastapi -c "CREATE DATABASE fastapi_test;"
+                PGPASSWORD=${{ secrets.DATABASE_PASSWORD }} psql -h 127.0.0.1 -U ${{ secrets.DATABASE_USERNAME }} -d ${{ secrets.DATABASE_NAME }} -c "CREATE DATABASE fastapi_test;"
               continue-on-error: true
             - name: test with pytest
               run: |
                 pip install pytest
                 pytest
-
-
+            - name: Extract Docker image metadata
+              id: meta
+              uses: docker/metadata-action@v5
+              with:
+                images: ${{ secrets.DOCKER_USERNAME }}/fastapi
+            - name: Log in to Docker Hub
+              uses: docker/login-action@v3
+              with:
+                username: ${{ secrets.DOCKER_USERNAME }}
+                password: ${{ secrets.DOCKER_PASSWORD }}
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v6
+              with:                                                                                                                                             
+                context: .                                                                                                                                      
+                push: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}                                                           
+                tags: ${{ steps.meta.outputs.tags }}                                                                                                            
+                annotations: ${{ steps.meta.outputs.annotations }}  
+                provenance: true
+                sbom: true
 #test

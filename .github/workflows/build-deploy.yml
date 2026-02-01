@@ -14,73 +14,83 @@ on: [push, pull_request] #happens on all push and pulls
 # env:  #this is global env for all the jobs 
 
 jobs: 
-    job1: 
-        environment:
-            name: testing
-        env:
-            DATABASE_HOSTNAME: ${{ secrets.DATABASE_HOSTNAME }}
-            DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-            DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
-            DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
-            DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
-            SECRET_KEY: ${{ secrets.SECRET_KEY }}
-            ALGORITHM: ${{ secrets.ALGORITHM }}
-            ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
-        services:
-            postgres:
-                image: postgres:latest
-                env:
-                    POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-                    POSTGRES_DB: ${{ secrets.DATABASE_NAME }}
-                    POSTGRES_USER: ${{ secrets.DATABASE_USERNAME }}           
-                ports: 
-                    - 5432:5432
-                options: >-                                                                                                                                 
-                    --health-cmd pg_isready                                                                                                                 
-                    --health-interval 10s                                                                                                                   
-                    --health-timeout 5s                                                                                                                     
-                    --health-retries 5      
-        runs-on: ubuntu-latest
-        steps:
-            - name: pulling git repo
-              uses: actions/checkout@v6
-            # - name: say hi to Zhihao
-            #   run: echo "hello Zhihao"
-            - name: Install latest python
-              uses: actions/setup-python@v6
-              with:
-                python-version: '3.13' 
-            - name: update pip
-              run: python -m pip install --upgrade pip
-            - name: install all dependencies
-              run: pip install -r requirements.txt
-            - name: create test database
-              run: |
-                PGPASSWORD=${{ secrets.DATABASE_PASSWORD }} psql -h 127.0.0.1 -U ${{ secrets.DATABASE_USERNAME }} -d ${{ secrets.DATABASE_NAME }} -c "CREATE DATABASE fastapi_test;"
-              continue-on-error: true
-            - name: test with pytest
-              run: |
-                pip install pytest
-                pytest
-            - name: Extract Docker image metadata
-              id: meta
-              uses: docker/metadata-action@v5
-              with:
-                images: ${{ secrets.DOCKER_USERNAME }}/fastapi
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v3
-              with:
-                username: ${{ secrets.DOCKER_USERNAME }}
-                password: ${{ secrets.DOCKER_PASSWORD }}
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
-            - name: Build and push Docker image
-              uses: docker/build-push-action@v6
-              with:                                                                                                                                             
-                context: .                                                                                                                                      
-                push: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}                                                           
-                tags: ${{ steps.meta.outputs.tags }}                                                                                                            
-                annotations: ${{ steps.meta.outputs.annotations }}  
-                provenance: true
-                sbom: true
+  build: 
+      environment:
+          name: testing
+      env:
+          DATABASE_HOSTNAME: ${{ secrets.DATABASE_HOSTNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          ALGORITHM: ${{ secrets.ALGORITHM }}
+          ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
+      services:
+          postgres:
+              image: postgres:latest
+              env:
+                  POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+                  POSTGRES_DB: ${{ secrets.DATABASE_NAME }}
+                  POSTGRES_USER: ${{ secrets.DATABASE_USERNAME }}           
+              ports: 
+                  - 5432:5432
+              options: >-                                                                                                                                 
+                  --health-cmd pg_isready                                                                                                                 
+                  --health-interval 10s                                                                                                                   
+                  --health-timeout 5s                                                                                                                     
+                  --health-retries 5      
+      runs-on: ubuntu-latest
+      steps:
+          - name: pulling git repo
+            uses: actions/checkout@v6
+          # - name: say hi to Zhihao
+          #   run: echo "hello Zhihao"
+          - name: Install latest python
+            uses: actions/setup-python@v6
+            with:
+              python-version: '3.13' 
+          - name: update pip
+            run: python -m pip install --upgrade pip
+          - name: install all dependencies
+            run: pip install -r requirements.txt
+          - name: create test database
+            run: |
+              PGPASSWORD=${{ secrets.DATABASE_PASSWORD }} psql -h 127.0.0.1 -U ${{ secrets.DATABASE_USERNAME }} -d ${{ secrets.DATABASE_NAME }} -c "CREATE DATABASE fastapi_test;"
+            continue-on-error: true
+          - name: test with pytest
+            run: |
+              pip install pytest
+              pytest
+          - name: Extract Docker image metadata
+            id: meta
+            uses: docker/metadata-action@v5
+            with:
+              images: ${{ secrets.DOCKER_USERNAME }}/fastapi
+          - name: Log in to Docker Hub
+            uses: docker/login-action@v3
+            with:
+              username: ${{ secrets.DOCKER_USERNAME }}
+              password: ${{ secrets.DOCKER_PASSWORD }}
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v3
+          - name: Build and push Docker image
+            uses: docker/build-push-action@v6
+            with:                                                                                                                                             
+              context: .                                                                                                                                      
+              push: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}                                                           
+              tags: ${{ steps.meta.outputs.tags }}                                                                                                            
+              annotations: ${{ steps.meta.outputs.annotations }}  
+              provenance: true
+              sbom: true
 #test
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build]
+
+    steps:
+      - name: deploying stuff
+        run: echo "going to deploy something"
+
+
+
